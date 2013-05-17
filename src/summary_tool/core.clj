@@ -2,8 +2,6 @@
 (require 'clojure.string)
 (require 'clojure.set)
 
-(def sentence-scores {})
-
 (defn split-to-sentences 
   [content]
   (clojure.string/split 
@@ -13,10 +11,6 @@
 (defn split-to-paragraphs
   [content]
   (clojure.string/split content #"\n\n"))
-
-(defn format-sentence
-  [sentence]
-  (clojure.string/replace sentence #"\W+" ""))
 
 (defn calc-sentence-intersection
   [sen1 sen2]
@@ -39,15 +33,31 @@
 ; compare every sentence to every other sentence
 ; compute intersections between sentences
 ; sum these values
-; store the sum for each sentence
+; store the tuple [sentence-score sentence]
 (defn rank-sentences
   [content]
-  (let [s (split-to-sentences content)]
-    (doseq [current s]
-     (assoc sentence-scores 
-              #(format-sentence current)                          ;key
-              #(reduce + (compute-sentence-scores current s)))))) ;value
+  (let [s (split-to-sentences content)
+        scores (map #(compute-sentence-scores % s) s)
+        ranks (map #(reduce + %) scores)]
+    (interleave ranks s)))
+
+(defn sort-ranked-sentences
+   [ranked]
+   (sort-by first > ranked))
+
+(defn find-best-sentence
+  [content]
+  (let [paras (split-to-paragraphs content)]
+    (doseq [p paras]
+      (if (< 2 (count p))
+        nil ; ignore short paragraphs 
+        (let [[_ best] (first (sort-ranked-sentences (rank-sentences p)))] best )))))
+
+(defn make-summary
+   [content]
+   (filter #(not= nil %) (find-best-sentence content)))
 
 
+(def test-content "Habitat for Humanity homes, built for low-income buyers using volunteer labor and donations, are financed with affordable loans. The nonprofit selects homeowners based on their level of need, willingness to become partners in the program and ability to repay their loan. Homeowners invest their own time into building the homes as well.")
 
 
