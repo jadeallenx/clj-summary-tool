@@ -39,7 +39,7 @@
   (let [s (split-to-sentences content)
         scores (map #(compute-sentence-scores % s) s)
         ranks (map #(reduce + %) scores)]
-    (interleave ranks s)))
+    (map vector ranks s)))
 
 (defn sort-ranked-sentences
    [ranked]
